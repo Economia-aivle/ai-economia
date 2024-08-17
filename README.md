@@ -1,7 +1,9 @@
 # ai-economia
 
-# RAG
-## Requirements
+## RAG
+### Requirements
+datasets
 
-# pine tunning - Llama3
-## Requirements
+
+## pine tunning - Llama3
+### Requirements
