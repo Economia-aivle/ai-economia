@@ -1,2 +1,7 @@
 # ai-economia
-Chat
+
+# RAG
+## Requirements
+
+# pine tunning - Llama3
+## Requirements
