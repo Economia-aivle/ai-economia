@@ -5,5 +5,5 @@
 datasets
 
 
-## pine tunning - Llama3
+## Fine tunning - Llama3
 ### Requirements
