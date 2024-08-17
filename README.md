@@ -120,10 +120,10 @@
       )
 
 ### 모델 훈련
-from trl import SFTTrainer
-from transformers import TrainingArguments
-
-tokenizer.padding_side = "right"  # 토크나이저의 패딩을 오른쪽으로 설정합니다.
+      from trl import SFTTrainer
+      from transformers import TrainingArguments
+      
+      tokenizer.padding_side = "right"  # 토크나이저의 패딩을 오른쪽으로 설정합니다.
 
 ### SFTTrainer를 사용하여 모델 학습 설정
 
