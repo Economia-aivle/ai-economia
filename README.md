@@ -1,8 +1,100 @@
 # ai-economia
 
 ## RAG
+
+
+
 ### Requirements
       datasets
+      install -q openai langchain tiktoken faiss-cpu sentence-transformers langchain-community langchain-core
+      konlpy
+      faiss-cpu
+      langchain_openai
+      openai==0.28
+      from langchain.vectorstores import FAISS
+      faiss
+      numpy
+      openai
+      
+### 사전 훈련 모델인 BERT의 ko-sroberta-multitask 사용
+
+
+- 한국어 문장 임베딩을 생성하기 위해 SentenceTransformer 라이브러리를 사용하여 사전 훈련된 모델인 한국어 학습 모델 로드
+
+      from sentence_transformers import SentenceTransformer
+      embedding = SentenceTransformer('jhgan/ko-sroberta-multitask')
+
+
+### FAISS 벡터 DB 생성
+
+
+- NumPy를 사용하여 저장된 임베딩을 로드하고, FAISS 라이브러리를 사용하여 이러한 임베딩을 L2 거리 기반 인덱스에 추가합니다. 이 인덱스는 이후 검색 작업에서 사용.
+- 문서 저장소를 생성하고, 각 문서에 고유 ID를 부여합니다. 그리고 FAISS 클래스를 사용하여 문서와 임베딩이 포함된 VectorStore를 초기화
+
+      load_embeddings = np.load('/content/drive/MyDrive/KT_AIVLE/빅프로젝트/embeddings.npy')
+
+      dimension = load_embeddings.shape[1]
+      index = faiss.IndexFlatL2(dimension)
+      index.add(np.array(load_embeddings, dtype=np.float32))
+      
+      docstore = {i: doc for i, doc in enumerate(documents)}
+      index_to_docstore_id = {i: i for i in range(len(documents))}
+      
+      
+      faiss_vectorstore = FAISS(index=index, docstore=docstore, index_to_docstore_id=index_to_docstore_id, embedding_function=embedding)
+
+### 정보 검색 및 쿼리
+      # 샘플을 검색하고 요약 생성
+      num_samples = 5
+      n_total_vectors = faiss_vectorstore.index.ntotal
+      random_indices = np.random.choice(n_total_vectors, num_samples, replace=False)
+      
+      summary_texts = []
+      for idx in random_indices:
+          content = faiss_vectorstore.docstore[idx].split('\n', 1)
+          doc_title, doc_description = content if len(content) == 2 else ("No title available", content[0])
+          summary_texts.append(f"{doc_title} - {doc_description}")
+      summary_text = "\n".join(summary_texts)
+
+### OpenAI를 사용한 응답 생성
+
+- OpenAI API 키를 설정하고, 임의의 문서를 선택하여 이들의 제목과 설명을 요약합니다. 요약된 텍스트는 주제 생성에 사용됩니다.
+
+  
+      openai.api_key = "your-api-key"
+      response = openai.ChatCompletion.create(
+          model="gpt-4o",
+          messages=[{"role": "system", "content": "Instructions"}, {"role": "user", "content": f"Summaries:\n{summary_text}"}],
+          max_tokens=300
+      )
+      
+      print(response['choices'][0]['message']['content'])
+
+
+### 문제 생성
+
+
+- 문서 검색기를 정의하여 주어진 쿼리에 대해 가장 관련성 높은 문서를 검색합니다. 검색은 FAISS 인덱스를 사용하여 수행되며, 결과 문서는 다양한 문제 생성 작업에 사용됩니다.
+
+      class Retriever:
+          @staticmethod
+          def retrieve(query):
+              cate_indices = [doc_id for doc_id, doc in faiss_vectorstore.docstore.items() if '금융' in doc.metadata.get('Cate', '')]
+              filtered_embeddings = np.array([faiss_vectorstore.index.reconstruct(doc_id) for doc_id in cate_indices])
+              query_embedding = embedding.encode([query]).reshape(1, -1)
+              D, I = faiss_vectorstore.index.search(query_embedding, len(filtered_embeddings))
+              similarities = 1 / (1 + D[0])
+              max_similarity = np.max(similarities)
+              results = []
+              for i in range(len(I[0])):
+                  doc_id = cate_indices[I[0][i]]
+                  doc = faiss_vectorstore.docstore[doc_id]
+                  similarity = similarities[i]
+                  results.append({'score': similarity, 'content': doc.page_content, 'metadata': doc.metadata})
+              random_results = random.sample(results, min(5, len(results)))
+              return {'documents': [result['content'] for result in random_results]}
+
+
 
 
 ## Unsloth_Llama3_Fine tunning
