@@ -94,6 +94,61 @@
               random_results = random.sample(results, min(5, len(results)))
               return {'documents': [result['content'] for result in random_results]}
 
+### 문제 생성기
+- 세 가지 유형의 문제(OX 문제, 객관식 문제, 주관식 빈칸 문제)를 생성하기 위해 LLMChain과 ChatOpenAI 모델을 사용합니다. 각 문제 유형은 특정 템플릿을 기반으로 하며, 고등학생 수준에 맞추어 문제를 생성
+
+- OX 문제 생성
+  
+        template = """
+      O,X 문제를 생성한다.
+      {context}에 있는 내용을 활용하여 O,X문제를 생성한다.
+      문제)
+      답)
+      """
+      model = ChatOpenAI(model="gpt-4o", temperature=0.5)
+      results = Retriever.retrieve(query)
+      chain = LLMChain(prompt=prompt_temp, llm=model, output_key="answers")
+      response = chain.invoke({"context": results['documents']})
+      print(response['answers'])
+
+- 객관식 문제 생성
+
+       template = """
+      4지선다형 문제를 생성한다.
+      {context}에 있는 내용을 활용하여 문제를 생성한다
+      문제)
+      보기)
+      1.
+      2.
+      3.
+      4.
+      답)
+      """
+
+- 주관식 빈칸 문제 생성
+
+      template = """
+      주관식 문제를 생성한다.
+      {context}에 있는 내용을 활용하여 문제를 생성한다.
+      문제)
+      답)
+      """
+
+- 시나리오 생성
+
+        template = """
+      다음의 단어와 그 설명을 바탕으로 경제 관련 주제를 만들고, 그 주제에 대한 상황극과 설명을 포함한 시나리오를 작성해주세요.
+      """
+
+### 유사도 평가
+
+- `difflib.SequenceMatcher`를 사용하여 두 텍스트 사이의 유사도를 계산합니다. 이는 시나리오의 정확성을 평가하는 데 사용
+
+      answer_bytes = bytes(sentences[0], 'utf-8')
+      input_bytes = bytes(sentences[1], 'utf-8')
+      sm = difflib.SequenceMatcher(None, answer_bytes, input_bytes)
+      similar = sm.ratio()
+      print('SequenceMatcher: ', similar)
 
 
 
