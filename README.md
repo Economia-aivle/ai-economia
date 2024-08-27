@@ -15,8 +15,11 @@
       faiss
       numpy
       openai
+
+      
       
 ### 사전 훈련 모델인 BERT의 ko-sroberta-multitask 사용
+
 
 
 - 한국어 문장 임베딩을 생성하기 위해 SentenceTransformer 라이브러리를 사용하여 사전 훈련된 모델인 한국어 학습 모델 로드
@@ -28,8 +31,11 @@
 ### FAISS 벡터 DB 생성
 
 
+
 - NumPy를 사용하여 저장된 임베딩을 로드하고, FAISS 라이브러리를 사용하여 이러한 임베딩을 L2 거리 기반 인덱스에 추가합니다. 이 인덱스는 이후 검색 작업에서 사용.
 - 문서 저장소를 생성하고, 각 문서에 고유 ID를 부여합니다. 그리고 FAISS 클래스를 사용하여 문서와 임베딩이 포함된 VectorStore를 초기화
+
+  
 
       load_embeddings = np.load('/content/drive/MyDrive/KT_AIVLE/빅프로젝트/embeddings.npy')
 
@@ -42,6 +48,8 @@
       
       
       faiss_vectorstore = FAISS(index=index, docstore=docstore, index_to_docstore_id=index_to_docstore_id, embedding_function=embedding)
+
+  
 
 ### 정보 검색 및 쿼리
       # 샘플을 검색하고 요약 생성
@@ -56,7 +64,9 @@
           summary_texts.append(f"{doc_title} - {doc_description}")
       summary_text = "\n".join(summary_texts)
 
+
 ### OpenAI를 사용한 응답 생성
+
 
 - OpenAI API 키를 설정하고, 임의의 문서를 선택하여 이들의 제목과 설명을 요약합니다. 요약된 텍스트는 주제 생성에 사용됩니다.
 
@@ -72,6 +82,7 @@
 
 
 ### 문제 생성
+
 
 
 - 문서 검색기를 정의하여 주어진 쿼리에 대해 가장 관련성 높은 문서를 검색합니다. 검색은 FAISS 인덱스를 사용하여 수행되며, 결과 문서는 다양한 문제 생성 작업에 사용됩니다.
@@ -95,9 +106,12 @@
               return {'documents': [result['content'] for result in random_results]}
 
 ### 문제 생성기
+
 - 세 가지 유형의 문제(OX 문제, 객관식 문제, 주관식 빈칸 문제)를 생성하기 위해 LLMChain과 ChatOpenAI 모델을 사용합니다. 각 문제 유형은 특정 템플릿을 기반으로 하며, 고등학생 수준에 맞추어 문제를 생성
 
+
 - OX 문제 생성
+
   
         template = """
       O,X 문제를 생성한다.
@@ -110,6 +124,7 @@
       chain = LLMChain(prompt=prompt_temp, llm=model, output_key="answers")
       response = chain.invoke({"context": results['documents']})
       print(response['answers'])
+  
 
 - 객관식 문제 생성
 
@@ -125,6 +140,7 @@
       답)
       """
 
+
 - 주관식 빈칸 문제 생성
 
       template = """
@@ -133,14 +149,17 @@
       문제)
       답)
       """
+  
 
 - 시나리오 생성
 
         template = """
       다음의 단어와 그 설명을 바탕으로 경제 관련 주제를 만들고, 그 주제에 대한 상황극과 설명을 포함한 시나리오를 작성해주세요.
       """
+  
 
 ### 유사도 평가
+
 
 - `difflib.SequenceMatcher`를 사용하여 두 텍스트 사이의 유사도를 계산합니다. 이는 시나리오의 정확성을 평가하는 데 사용
 
